@@ -58,13 +58,32 @@ func printLists(client pb.StreamServiceClient, r *pb.StreamRequest) error {
 			return err
 		}
 
-		log.Printf("resp: pj.name: %s, pt.value: %d", resp.Pt.Name, resp.Pt.Value)
+		log.Printf("Lists_resp: pj.name: %s, pt.value: %d", resp.Pt.Name, resp.Pt.Value)
 	}
 
 	return nil
 }
 
 func printRecord(client pb.StreamServiceClient, r *pb.StreamRequest) error {
+	stream, err := client.Record(context.Background())
+	if err != nil {
+		return err
+	}
+
+	for n := 0; n < 6; n++ {
+		err := stream.Send(r)
+		if err != nil {
+			return err
+		}
+	}
+
+	resp, err := stream.CloseAndRecv()
+	if err != nil {
+		return err
+	}
+
+	log.Printf("Record_resp: pj.name: %s, pt.value: %d", resp.Pt.Name, resp.Pt.Value)
+
 	return nil
 }
 

@@ -322,6 +322,7 @@ func RegisterStreamServiceServer(s *grpc.Server, srv StreamServiceServer) {
 }
 
 func _StreamService_List_Handler(srv interface{}, stream grpc.ServerStream) error {
+	fmt.Println("List_Handler")
 	m := new(StreamRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err

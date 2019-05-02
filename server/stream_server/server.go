@@ -1,6 +1,8 @@
 package main
 
 import (
+	"golang.org/x/tools/go/ssa/interp/testdata/src/fmt"
+	"io"
 	"log"
 	"net"
 
@@ -40,11 +42,22 @@ func (s *StreamService) List(r *pb.StreamRequest, stream pb.StreamService_ListSe
 			return err
 		}
 	}
-
 	return nil
 }
 
 func (s *StreamService) Record(stream pb.StreamService_RecordServer) error {
+	for {
+		r, err := stream.Recv()
+		if err == io.EOF {
+			fmt.Println("SendAndClose")
+			return stream.SendAndClose(&pb.StreamResponse{Pt: &pb.StreamPoint{Name: "gRPC Stream Server: Record", Value: 1}})
+		}
+		if err != nil {
+			return err
+		}
+		log.Printf("Record_stream.Recv pt.name: %s, pt.value: %d", r.Pt.Name, r.Pt.Value)
+	}
+
 	return nil
 }
 
