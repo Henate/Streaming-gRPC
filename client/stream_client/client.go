@@ -88,5 +88,29 @@ func printRecord(client pb.StreamServiceClient, r *pb.StreamRequest) error {
 }
 
 func printRoute(client pb.StreamServiceClient, r *pb.StreamRequest) error {
+	stream, err := client.Route(context.Background())
+	if err != nil {
+		return err
+	}
+
+	for n := 0; n <= 6; n++ {
+		err = stream.Send(r)
+		if err != nil {
+			return err
+		}
+
+		resp, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		log.Printf("resp: pj.name: %s, pt.value: %d", resp.Pt.Name, resp.Pt.Value)
+	}
+
+	stream.CloseSend()
+
 	return nil
 }
