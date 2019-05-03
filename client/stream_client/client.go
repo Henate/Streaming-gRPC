@@ -1,9 +1,12 @@
 package main
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	context "golang.org/x/net/context"
 	"golang.org/x/tools/go/ssa/interp/testdata/src/fmt"
 	"io"
+	"io/ioutil"
 	"log"
 
 	"google.golang.org/grpc"
@@ -17,15 +20,31 @@ const (
 )
 
 func main() {
-	c, err := credentials.NewClientTLSFromFile("../../conf/server.pem", "Streaming-gRPC")
+	cert, err := tls.LoadX509KeyPair("../../conf/client/client.pem", "../../conf/client/client.key")
 	if err != nil {
-		log.Fatalf("credentials.NewClientTLSFromFile err: %v", err)
+		log.Fatalf("tls.LoadX509KeyPair err: %v", err)
 	}
+
+	certPool := x509.NewCertPool()
+	ca, err := ioutil.ReadFile("../../conf/ca.pem")
+	if err != nil {
+		log.Fatalf("ioutil.ReadFile err: %v", err)
+	}
+
+	if ok := certPool.AppendCertsFromPEM(ca); !ok {
+		log.Fatalf("certPool.AppendCertsFromPEM err")
+	}
+
+	c := credentials.NewTLS(&tls.Config{
+		Certificates: []tls.Certificate{cert},
+		ServerName:   "Streaming-gRPC",
+		RootCAs:      certPool,
+	})
+
 	conn, err := grpc.Dial(":"+PORT, grpc.WithTransportCredentials(c))
 	if err != nil {
 		log.Fatalf("grpc.Dial err: %v", err)
 	}
-
 	defer conn.Close()
 
 	client := pb.NewStreamServiceClient(conn)
